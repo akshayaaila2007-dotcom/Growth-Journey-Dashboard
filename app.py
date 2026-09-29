@@ -10,7 +10,7 @@ import streamlit as st
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Growth Journey Dashboard",
-    page_icon="",
+    page_icon="💜",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -424,10 +424,31 @@ st.markdown(
         padding-top: 30px;
     }
 
+    /* Small, softly blended signature under the original footer */
+    .signature {
+        text-align: center;
+        color: #a99ac7;
+        font-family: Georgia, serif;
+        font-style: italic;
+        font-size: 13px;
+        letter-spacing: 0.3px;
+        opacity: 0.75;
+        padding-top: 6px;
+        padding-bottom: 10px;
+    }
+
     @media (max-width: 768px) {
-        .hero { padding: 24px; }
-        .hero h1 { font-size: 27px; }
-        .stat-value { font-size: 25px; }
+        .hero {
+            padding: 24px;
+        }
+
+        .hero h1 {
+            font-size: 27px;
+        }
+
+        .stat-value {
+            font-size: 25px;
+        }
     }
     </style>
     """,
@@ -437,7 +458,7 @@ st.markdown(
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
-    st.markdown("##  Growth Journey")
+    st.markdown("## Growth Journey")
     st.caption("Your personal learning space")
     st.divider()
 
@@ -638,14 +659,14 @@ if page == "Dashboard":
     if goals:
         for goal in goals[:3]:
             done = goal_done(goal)
-            text = escape(goal_text(goal))
+            goal_label = escape(goal_text(goal))
             status = "✅ Completed" if done else "🕒 In progress"
             card_class = "goal-card goal-done" if done else "goal-card"
 
             st.markdown(
                 f"""
                 <div class="{card_class}">
-                    <b>{text}</b><br>
+                    <b>{goal_label}</b><br>
                     <span style="color:#c2bbdf;font-size:13px;">
                         {status}
                     </span>
@@ -804,9 +825,11 @@ elif page == "My Goals":
             col1, col2, col3 = st.columns([5, 1.5, 0.8])
 
             with col1:
-                st.markdown(
-                    f"~~{text}~~" if done else f"**{text}**"
-                )
+                if done:
+                    st.markdown(f"~~{text}~~")
+                else:
+                    st.markdown(f"**{text}**")
+
                 st.caption(
                     "Completed 🎉" if done else "One step closer!"
                 )
@@ -979,7 +1002,7 @@ elif page == "Daily Planner":
                         save_data()
                         st.rerun()
 
-    st.markdown("###  Study reminder")
+    st.markdown("### Study reminder")
     st.info(
         "Focus on one task at a time. Even 30 minutes of learning "
         "can make a difference!"
@@ -1209,6 +1232,16 @@ st.markdown(
     """
     <div class="footer">
         Made for your learning journey · Keep growing, one step at a time.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Subtle signature below the original footer
+st.markdown(
+    """
+    <div class="signature">
+        Still growing. — Akshaya.Aila
     </div>
     """,
     unsafe_allow_html=True,
