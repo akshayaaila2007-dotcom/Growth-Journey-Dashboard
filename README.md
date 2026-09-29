@@ -2,6 +2,9 @@
 
 A personal learning tracker built with Python and Streamlit.
 
+## Live Demo
+[Open Growth Journey Dashboard](https://growth-journey-dashboard-2rbmkewqdtvjwarujqbq2z.streamlit.app/)
+
 ## Features
 - Track my skills
 - View progress bars
@@ -16,8 +19,8 @@ A personal learning tracker built with Python and Streamlit.
 ## How to Run
 Install the required package:
 
-pip install -r requirements.txt
+    pip install -r requirements.txt
 
 Run the dashboard:
 
-python -m streamlit run app.py
+    python -m streamlit run app.py
