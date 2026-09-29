@@ -1,6 +1,8 @@
 import json
+import time
 from pathlib import Path
 from datetime import date
+from html import escape
 
 import streamlit as st
 
@@ -8,7 +10,7 @@ import streamlit as st
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Growth Journey Dashboard",
-    page_icon="🌷",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -17,50 +19,55 @@ st.set_page_config(
 # ---------------- DATA FILE ----------------
 DATA_FILE = Path(__file__).parent / "growth_data.json"
 
-DEFAULT_SKILLS = {
-    "Python": 0,
-    "C Programming": 0,
-    "HTML & CSS": 0,
-    "Java": 0,
-    "Communication": 0,
-}
-
 
 # ---------------- DATA MANAGEMENT ----------------
 def load_data():
     if DATA_FILE.exists():
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as file:
-                data = json.load(file)
+                saved_data = json.load(file)
         except (json.JSONDecodeError, OSError):
-            data = {}
+            saved_data = {}
     else:
-        data = {}
+        saved_data = {}
 
-    if not isinstance(data, dict):
-        data = {}
+    if not isinstance(saved_data, dict):
+        saved_data = {}
 
-    data.setdefault("skills", DEFAULT_SKILLS.copy())
-    data.setdefault("goals", [])
-    data.setdefault("achievements", [])
-    data.setdefault("study_plans", {})
+    saved_data.setdefault("skills", {})
+    saved_data.setdefault("goals", [])
+    saved_data.setdefault("achievements", [])
+    saved_data.setdefault("study_plans", {})
 
-    if not isinstance(data["skills"], dict):
-        data["skills"] = DEFAULT_SKILLS.copy()
+    if not isinstance(saved_data["skills"], dict):
+        saved_data["skills"] = {}
 
-    for skill, value in DEFAULT_SKILLS.items():
-        data["skills"].setdefault(skill, value)
+    if not isinstance(saved_data["goals"], list):
+        saved_data["goals"] = []
 
-    if not isinstance(data["goals"], list):
-        data["goals"] = []
+    if not isinstance(saved_data["achievements"], list):
+        saved_data["achievements"] = []
 
-    if not isinstance(data["achievements"], list):
-        data["achievements"] = []
+    if not isinstance(saved_data["study_plans"], dict):
+        saved_data["study_plans"] = {}
 
-    if not isinstance(data["study_plans"], dict):
-        data["study_plans"] = {}
+    # Preserve saved skills and progress without adding preset subjects.
+    cleaned_skills = {}
 
-    return data
+    for name, value in saved_data["skills"].items():
+        try:
+            cleaned_skills[str(name)] = max(
+                0,
+                min(100, int(value or 0)),
+            )
+        except (TypeError, ValueError):
+            cleaned_skills[str(name)] = 0
+
+    saved_data["skills"] = cleaned_skills
+    return saved_data
+
+
+data = load_data()
 
 
 def save_data():
@@ -76,6 +83,10 @@ def goal_text(goal):
 
 def goal_done(goal):
     return isinstance(goal, dict) and bool(goal.get("done", False))
+
+
+def task_done(task):
+    return isinstance(task, dict) and bool(task.get("done", False))
 
 
 def mark_goal_done(index):
@@ -97,32 +108,20 @@ def delete_goal(index):
     save_data()
 
 
-def task_text(task):
-    if isinstance(task, dict):
-        return task.get("topic", "Untitled task")
-    return str(task)
-
-
-def task_done(task):
-    return isinstance(task, dict) and bool(task.get("done", False))
-
-
-data = load_data()
-
-
-# ---------------- ANIMATED DESIGN ----------------
+# ---------------- DARK THEME ----------------
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
     :root {
-        --purple: #7567e8;
-        --deep-purple: #5143bd;
-        --pink: #ed8fc5;
-        --text: #292842;
-        --muted: #85849d;
-        --border: #e9e7f5;
+        --bg: #151329;
+        --panel: #211e3d;
+        --purple: #a99aff;
+        --pink: #ed9bc9;
+        --text: #f5f2ff;
+        --muted: #c2bbdf;
+        --border: #403960;
     }
 
     html, body, [class*="css"] {
@@ -131,38 +130,34 @@ st.markdown(
 
     .stApp {
         background:
-            radial-gradient(circle at 10% 0%, #f1edff 0%, transparent 28%),
-            radial-gradient(circle at 100% 15%, #fff0f8 0%, transparent 25%),
-            #f8f8fd;
+            radial-gradient(circle at 10% 0%, #30275a 0%, transparent 30%),
+            radial-gradient(circle at 100% 15%, #3a234d 0%, transparent 25%),
+            var(--bg);
         color: var(--text);
     }
 
-    [data-testid="stSidebar"] {
-        background: rgba(255,255,255,0.96);
-        border-right: 1px solid #e9e7f5;
+    [data-testid="stHeader"] {
+        background: rgba(21, 19, 41, 0.96);
     }
 
-    /* Sidebar text visibility fix */
+    [data-testid="stSidebar"] {
+        background: #201c3b;
+        border-right: 1px solid var(--border);
+    }
+
     [data-testid="stSidebar"],
     [data-testid="stSidebar"] p,
     [data-testid="stSidebar"] span,
     [data-testid="stSidebar"] label,
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span,
     [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        color: #51436f !important;
+        color: var(--text) !important;
     }
 
     [data-testid="stSidebar"] h1,
     [data-testid="stSidebar"] h2,
     [data-testid="stSidebar"] h3 {
-        color: #292842 !important;
-    }
-
-    [data-testid="stSidebar"] [role="radiogroup"] label,
-    [data-testid="stSidebar"] [role="radiogroup"] label p {
-        color: #51436f !important;
+        color: #ffffff !important;
     }
 
     .block-container {
@@ -171,39 +166,24 @@ st.markdown(
         padding-bottom: 3rem;
     }
 
-    h1, h2, h3 {
-        font-family: 'Manrope', sans-serif;
+    h1, h2, h3, h4, p, label, li {
         color: var(--text);
     }
 
     .hero {
-        position: relative;
-        overflow: hidden;
         border-radius: 26px;
         padding: 32px;
         color: white;
-        background: linear-gradient(120deg, #6254d9, #8d7cf4, #c49bf0);
-        background-size: 200% 200%;
-        animation: gradientShift 9s ease infinite;
-        box-shadow: 0 14px 35px rgba(98, 84, 217, 0.22);
+        background: linear-gradient(120deg, #5143a6, #7564d7, #925eaa);
+        box-shadow: 0 14px 35px rgba(0, 0, 0, 0.25);
         margin-bottom: 27px;
-    }
-
-    .hero::after {
-        content: "✦";
-        position: absolute;
-        right: 8%;
-        top: 10%;
-        font-size: 100px;
-        color: rgba(255,255,255,0.15);
-        animation: float 4s ease-in-out infinite;
     }
 
     .hero-tag {
         display: inline-block;
         padding: 7px 13px;
         border-radius: 30px;
-        background: rgba(255,255,255,0.19);
+        background: rgba(255,255,255,0.13);
         border: 1px solid rgba(255,255,255,0.25);
         font-size: 12px;
         font-weight: 700;
@@ -213,6 +193,7 @@ st.markdown(
 
     .hero h1 {
         color: white;
+        font-family: 'Manrope', sans-serif;
         font-size: 34px;
         font-weight: 800;
         margin: 0 0 9px 0;
@@ -227,9 +208,9 @@ st.markdown(
 
     .section-title {
         font-family: 'Manrope', sans-serif;
-        font-size: 23px;
+        font-size: 24px;
         font-weight: 800;
-        color: #292842;
+        color: var(--text);
         margin: 16px 0 5px 0;
     }
 
@@ -240,51 +221,22 @@ st.markdown(
     }
 
     .stat-card {
-        position: relative;
-        overflow: hidden;
-        background: rgba(255,255,255,0.86);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,0.95);
-        border-radius: 21px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
         padding: 21px;
         min-height: 145px;
-        box-shadow: 0 7px 22px rgba(55, 48, 110, 0.06);
-        transition: transform 0.3s ease,
-                    box-shadow 0.3s ease,
-                    border-color 0.3s ease;
-        animation: fadeUp 0.65s ease both;
+        box-shadow: 0 7px 22px rgba(0, 0, 0, 0.15);
+        transition: transform 0.25s ease;
     }
 
     .stat-card:hover {
-        transform: translateY(-8px) scale(1.015);
-        box-shadow: 0 17px 35px rgba(98, 84, 217, 0.16);
-        border-color: #c9c0ff;
-    }
-
-    .stat-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 60%;
-        height: 100%;
-        background: linear-gradient(
-            110deg,
-            transparent,
-            rgba(255,255,255,0.55),
-            transparent
-        );
-        transition: left 0.65s ease;
-    }
-
-    .stat-card:hover::before {
-        left: 140%;
+        transform: translateY(-4px);
     }
 
     .stat-icon {
         font-size: 25px;
         margin-bottom: 10px;
-        animation: float 4s ease-in-out infinite;
     }
 
     .stat-label {
@@ -295,49 +247,75 @@ st.markdown(
     }
 
     .stat-value {
-        color: #292842;
+        color: #ffffff;
         font-family: 'Manrope', sans-serif;
         font-size: 30px;
         font-weight: 800;
     }
 
-    .skill-name {
+    .skill-row {
+        background: #292545;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 15px 17px;
+        margin-bottom: 13px;
+    }
+
+    .skill-row-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    .skill-row-name {
+        color: #ffffff;
         font-weight: 700;
-        color: #30304a;
-        margin-bottom: 4px;
+        font-size: 15px;
+    }
+
+    .skill-row-percent {
+        color: #d8ceff;
+        font-weight: 800;
+        font-size: 15px;
+    }
+
+    .skill-track {
+        height: 12px;
+        width: 100%;
+        background: #45405f;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .skill-fill {
+        height: 100%;
+        border-radius: 20px;
+        background: linear-gradient(90deg, #8b7af0, #c19af3, #ed9bc9);
     }
 
     .goal-card {
-        background: rgba(255,255,255,0.92);
+        background: var(--panel);
         border: 1px solid var(--border);
         border-radius: 16px;
         padding: 16px 18px;
         margin: 9px 0;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-
-    .goal-card:hover {
-        transform: translateX(5px);
-        box-shadow: 0 8px 22px rgba(98, 84, 217, 0.10);
+        color: var(--text);
     }
 
     .goal-done {
-        background: #f0fbf5;
-        border-color: #c6ead4;
+        background: #203c37;
+        border-color: #397a68;
     }
 
     .achievement-card {
-        border: 1px solid #f4e5b6;
+        border: 1px solid var(--border);
         border-radius: 19px;
         padding: 19px;
         min-height: 190px;
         margin-bottom: 15px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .achievement-card:hover {
-        transform: translateY(-7px) rotate(-1deg);
-        box-shadow: 0 14px 30px rgba(191, 145, 48, 0.16);
+        background: var(--panel);
     }
 
     .achievement-icon {
@@ -347,104 +325,109 @@ st.markdown(
 
     .achievement-title {
         font-weight: 800;
-        color: #51401d;
+        color: #ffffff;
         margin-bottom: 6px;
     }
 
     .achievement-text {
-        color: #8c784c;
+        color: var(--muted);
         font-size: 13px;
     }
 
-    .planner-card {
-        background: rgba(255,255,255,0.92);
-        border: 1px solid #e9e7f5;
+    div[data-testid="stVerticalBlockBorderWrapper"],
+    div[data-testid="stForm"] {
+        background: var(--panel);
+        border: 1px solid var(--border);
         border-radius: 18px;
-        padding: 17px;
-        margin-bottom: 12px;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-
-    .planner-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 25px rgba(98, 84, 217, 0.10);
-    }
-
-    div.stButton > button {
-        border-radius: 12px;
-        font-weight: 700;
-        min-height: 42px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    div.stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(98, 84, 217, 0.15);
     }
 
     div[data-testid="stForm"] {
-        background: rgba(255,255,255,0.92);
-        border: 1px solid var(--border);
-        border-radius: 19px;
         padding: 20px;
     }
 
-    div[data-testid="stProgressBar"] > div > div {
-        background: linear-gradient(90deg, #7668e8, #b99bf8, #ed9bc9);
-        background-size: 200% 100%;
-        animation: progressGlow 3s linear infinite;
+    div.stButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
+        border-radius: 12px;
+        font-weight: 700;
+        min-height: 42px;
+        background: #7564d7;
+        color: white;
+        border: 1px solid #9385ed;
+    }
+
+    div.stButton > button:hover,
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        background: #8a79ed;
+        color: white;
+        border-color: #b3a8ff;
+    }
+
+    input, textarea,
+    [data-baseweb="input"],
+    [data-baseweb="select"] > div {
+        background-color: #292545 !important;
+        color: #ffffff !important;
+        border-color: #514a7c !important;
+    }
+
+    [data-baseweb="popover"],
+    [data-baseweb="menu"] {
+        background: #292545 !important;
+        color: white !important;
+    }
+
+    [data-testid="stMetric"] {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        padding: 15px;
+    }
+
+    [data-testid="stMetricLabel"],
+    [data-testid="stMetricValue"] {
+        color: var(--text) !important;
+    }
+
+    [data-testid="stProgressBar"] > div {
+        background: #39345f;
         border-radius: 20px;
     }
 
-    div[data-testid="stProgressBar"] > div {
-        background: #eeedf7;
+    [data-testid="stProgressBar"] > div > div {
+        background: linear-gradient(90deg, #8b7af0, #c19af3, #ed9bc9);
         border-radius: 20px;
+    }
+
+    [data-testid="stAlert"] {
+        background: #292545;
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+
+    .timer-display {
+        text-align: center;
+        font-family: 'Manrope', sans-serif;
+        font-size: clamp(48px, 8vw, 86px);
+        font-weight: 800;
+        color: #ffffff;
+        padding: 25px 10px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #5143a6, #7564d7, #925eaa);
+        border: 1px solid #9385ed;
+        margin: 12px 0 20px 0;
     }
 
     .footer {
         text-align: center;
-        color: #9998ad;
+        color: var(--muted);
         font-size: 12px;
         padding-top: 30px;
-    }
-
-    @keyframes fadeUp {
-        from {
-            opacity: 0;
-            transform: translateY(15px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-    }
-
-    @keyframes gradientShift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-
-    @keyframes progressGlow {
-        from { background-position: 0% 50%; }
-        to { background-position: 200% 50%; }
     }
 
     @media (max-width: 768px) {
         .hero { padding: 24px; }
         .hero h1 { font-size: 27px; }
         .stat-value { font-size: 25px; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after {
-            animation-duration: 0.01ms !important;
-            transition-duration: 0.01ms !important;
-        }
     }
     </style>
     """,
@@ -454,7 +437,7 @@ st.markdown(
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
-    st.markdown("## 🌷 Growth Journey")
+    st.markdown("##  Growth Journey")
     st.caption("Your personal learning space")
     st.divider()
 
@@ -465,6 +448,7 @@ with st.sidebar:
             "My Skills",
             "My Goals",
             "Daily Planner",
+            "Study Timer",
             "Achievements",
         ],
         key="page_navigation",
@@ -508,7 +492,7 @@ st.markdown(
     """
     <div class="hero">
         <div class="hero-tag">YOUR PERSONAL GROWTH SPACE ✨</div>
-        <h1>Welcome to your Growth Journey 🌷</h1>
+        <h1>Welcome to your Growth Journey</h1>
         <p>
             Every small step matters. Keep learning, celebrate your progress,
             and become a little better every day.
@@ -526,14 +510,16 @@ if page == "Dashboard":
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="section-subtitle">A little progress every day adds up to something amazing.</div>',
+        '<div class="section-subtitle">'
+        'A little progress every day adds up to something amazing.'
+        '</div>',
         unsafe_allow_html=True,
     )
 
     columns = st.columns(4)
 
     cards = [
-        ("📚", "Skills tracked", len(skills)),
+        ("📚", "Subjects / skills tracked", len(skills)),
         ("🎯", "Total goals", total_goals),
         ("✅", "Goals completed", completed_goals),
         ("📈", "Average skill level", f"{average_skill}%"),
@@ -561,19 +547,59 @@ if page == "Dashboard":
             unsafe_allow_html=True,
         )
         st.markdown(
-            '<div class="section-subtitle">Your learning levels so far.</div>',
+            '<div class="section-subtitle">'
+            'Active learning levels. Completed items stay in My Skills.'
+            '</div>',
             unsafe_allow_html=True,
         )
 
         with st.container(border=True):
-            for skill, value in skills.items():
-                value = max(0, min(100, int(value or 0)))
-                st.markdown(
-                    f"<div class='skill-name'>{skill}</div>",
-                    unsafe_allow_html=True,
+            active_skills = [
+                (name, value)
+                for name, value in skills.items()
+                if int(value or 0) < 100
+            ]
+
+            if not skills:
+                st.info(
+                    "First, add the subject or skill you want to complete "
+                    "in My Skills. Your progress bars will appear here."
                 )
-                st.progress(value / 100)
-                st.caption(f"{value}% completed")
+
+                if st.button("➕ Add your first subject / skill"):
+                    st.session_state.page_navigation = "My Skills"
+                    st.rerun()
+
+            elif not active_skills:
+                st.success(
+                    "All your tracked subjects / skills are complete! 🎉 "
+                    "Add another whenever you're ready."
+                )
+
+            else:
+                for name, value in active_skills:
+                    value = max(0, min(100, int(value or 0)))
+
+                    st.markdown(
+                        f"""
+                        <div class="skill-row">
+                            <div class="skill-row-top">
+                                <span class="skill-row-name">
+                                    {escape(str(name))}
+                                </span>
+                                <span class="skill-row-percent">
+                                    {value}%
+                                </span>
+                            </div>
+                            <div class="skill-track">
+                                <div class="skill-fill"
+                                     style="width:{value}%;">
+                                </div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
     with right:
         st.markdown(
@@ -581,7 +607,9 @@ if page == "Dashboard":
             unsafe_allow_html=True,
         )
         st.markdown(
-            '<div class="section-subtitle">Keep moving toward your targets.</div>',
+            '<div class="section-subtitle">'
+            'Keep moving toward your targets.'
+            '</div>',
             unsafe_allow_html=True,
         )
 
@@ -601,14 +629,16 @@ if page == "Dashboard":
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="section-subtitle">Your next little wins are waiting.</div>',
+        '<div class="section-subtitle">'
+        'Your next little wins are waiting.'
+        '</div>',
         unsafe_allow_html=True,
     )
 
     if goals:
         for goal in goals[:3]:
             done = goal_done(goal)
-            text = goal_text(goal)
+            text = escape(goal_text(goal))
             status = "✅ Completed" if done else "🕒 In progress"
             card_class = "goal-card goal-done" if done else "goal-card"
 
@@ -616,7 +646,9 @@ if page == "Dashboard":
                 f"""
                 <div class="{card_class}">
                     <b>{text}</b><br>
-                    <span style="color:#85849d;font-size:13px;">{status}</span>
+                    <span style="color:#c2bbdf;font-size:13px;">
+                        {status}
+                    </span>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -628,61 +660,92 @@ if page == "Dashboard":
 # ---------------- MY SKILLS ----------------
 elif page == "My Skills":
     st.markdown(
-        '<div class="section-title">💜 Build your skills</div>',
+        '<div class="section-title">💜 My subjects & skills</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="section-subtitle">Update your levels as you learn and improve.</div>',
+        '<div class="section-subtitle">'
+        'Add the subjects or skills you want to complete. '
+        'You can add as many as you need.'
+        '</div>',
         unsafe_allow_html=True,
     )
 
-    st.info("Move the sliders to update your progress. Your changes are saved automatically.")
+    if not data["skills"]:
+        st.info(
+            "Welcome! First, enter the subject or skill you want "
+            "to complete. Nothing is pre-filled."
+        )
+    else:
+        st.info(
+            "Update progress with the sliders. At 100%, a skill is "
+            "complete and its bar is hidden from Dashboard, but it "
+            "stays here."
+        )
 
-    with st.container(border=True):
-        for skill in list(data["skills"].keys()):
+        for name in list(data["skills"].keys()):
             current_value = max(
                 0,
-                min(100, int(data["skills"].get(skill, 0) or 0)),
+                min(100, int(data["skills"].get(name, 0) or 0)),
             )
 
-            st.markdown(f"### {skill}")
+            with st.container(border=True):
+                st.markdown(f"### {escape(str(name))}")
 
-            new_value = st.slider(
-                f"{skill} level",
-                min_value=0,
-                max_value=100,
-                value=current_value,
-                key=f"skill_slider_{skill}",
-                format="%d%%",
-            )
+                if current_value == 100:
+                    st.success("Completed 🎉")
 
-            if new_value != current_value:
-                data["skills"][skill] = new_value
-                save_data()
+                new_value = st.slider(
+                    f"{name} progress",
+                    min_value=0,
+                    max_value=100,
+                    value=current_value,
+                    key=f"skill_slider_{name}",
+                    format="%d%%",
+                )
 
-            st.progress(new_value / 100)
-            st.caption(f"{new_value}% completed")
-            st.divider()
+                if new_value != current_value:
+                    data["skills"][name] = new_value
+                    save_data()
+                    st.rerun()
 
-    st.markdown("### ➕ Add another skill")
+                st.progress(new_value / 100)
+                st.caption(f"{new_value}% completed")
+
+                if st.button(
+                    "🗑️ Remove",
+                    key=f"remove_skill_{name}",
+                ):
+                    del data["skills"][name]
+                    save_data()
+                    st.rerun()
+
+    st.markdown("### ➕ Add a subject or skill")
 
     with st.form("add_skill_form", clear_on_submit=True):
         new_skill = st.text_input(
-            "Skill name",
-            placeholder="Example: SQL",
+            "Subject or skill name",
+            placeholder="Example: Biology, Algebra, Python, Drawing",
         )
+
         submitted = st.form_submit_button(
-            "Add skill",
+            "Add subject / skill",
             use_container_width=True,
         )
 
         if submitted:
             new_skill = new_skill.strip()
+            existing_names = {
+                name.casefold()
+                for name in data["skills"]
+            }
 
             if not new_skill:
-                st.warning("Please enter a skill name.")
-            elif new_skill in data["skills"]:
-                st.warning("This skill is already in your list.")
+                st.warning("Please enter a subject or skill name.")
+
+            elif new_skill.casefold() in existing_names:
+                st.warning("That subject or skill is already in your list.")
+
             else:
                 data["skills"][new_skill] = 0
                 save_data()
@@ -697,14 +760,16 @@ elif page == "My Goals":
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="section-subtitle">Make a plan, take action, and celebrate every win.</div>',
+        '<div class="section-subtitle">'
+        'Make a plan, take action, and celebrate every win.'
+        '</div>',
         unsafe_allow_html=True,
     )
 
     with st.form("add_goal_form", clear_on_submit=True):
         new_goal = st.text_input(
             "What do you want to achieve?",
-            placeholder="Example: Complete Python basics",
+            placeholder="Example: Complete a chapter",
         )
 
         submitted = st.form_submit_button(
@@ -720,10 +785,7 @@ elif page == "My Goals":
             else:
                 data["goals"].insert(
                     0,
-                    {
-                        "text": new_goal,
-                        "done": False,
-                    },
+                    {"text": new_goal, "done": False},
                 )
                 save_data()
                 st.success("Your goal has been added!")
@@ -742,16 +804,18 @@ elif page == "My Goals":
             col1, col2, col3 = st.columns([5, 1.5, 0.8])
 
             with col1:
-                if done:
-                    st.markdown(f"~~{text}~~")
-                    st.caption("Completed 🎉")
-                else:
-                    st.markdown(f"**{text}**")
-                    st.caption("One step closer!")
+                st.markdown(
+                    f"~~{text}~~" if done else f"**{text}**"
+                )
+                st.caption(
+                    "Completed 🎉" if done else "One step closer!"
+                )
 
             with col2:
-                label = "Undo" if done else "Mark done"
-                if st.button(label, key=f"complete_{index}"):
+                if st.button(
+                    "Undo" if done else "Mark done",
+                    key=f"complete_{index}",
+                ):
                     mark_goal_done(index)
                     st.rerun()
 
@@ -763,7 +827,7 @@ elif page == "My Goals":
             st.divider()
 
 
-# ---------------- DAILY STUDY PLANNER ----------------
+# ---------------- DAILY PLANNER ----------------
 elif page == "Daily Planner":
     st.markdown(
         '<div class="section-title">📅 Daily Study Planner</div>',
@@ -771,7 +835,7 @@ elif page == "Daily Planner":
     )
     st.markdown(
         '<div class="section-subtitle">'
-        'Plan your study time, complete tasks, and track your daily progress.'
+        'Plan your study time, complete tasks, and track daily progress.'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -796,7 +860,6 @@ elif page == "Daily Planner":
 
     completed_tasks = sum(task_done(task) for task in daily_tasks)
     total_tasks = len(daily_tasks)
-
     daily_progress = (
         completed_tasks / total_tasks
         if total_tasks
@@ -810,29 +873,27 @@ elif page == "Daily Planner":
     )
 
     col1, col2, col3 = st.columns(3)
-
     col1.metric("📚 Tasks planned", total_tasks)
     col2.metric("✅ Tasks completed", completed_tasks)
     col3.metric("⏱️ Planned study time", f"{total_minutes} min")
 
     st.markdown("### Today's progress")
     st.progress(daily_progress)
-    st.caption(f"{round(daily_progress * 100)}% of today's tasks completed")
+    st.caption(
+        f"{round(daily_progress * 100)}% of today's tasks completed"
+    )
 
-    st.write("")
     st.markdown("### ➕ Add a study task")
 
     with st.form("daily_study_form", clear_on_submit=True):
         subject = st.text_input(
             "Subject",
-            placeholder="Example: Python",
+            placeholder="Example: Biology",
         )
-
         topic = st.text_input(
             "Topic or task",
-            placeholder="Example: Practice loops",
+            placeholder="Example: Revise chapter 1",
         )
-
         duration = st.number_input(
             "Study duration (minutes)",
             min_value=5,
@@ -859,16 +920,16 @@ elif page == "Daily Planner":
                     "duration": int(duration),
                     "done": False,
                 })
-
                 save_data()
                 st.success("Study task added!")
                 st.rerun()
 
-    st.write("")
     st.markdown("### 📝 Your study tasks")
 
     if not daily_tasks:
-        st.info("No tasks planned for this date. Add your first task above.")
+        st.info(
+            "No tasks planned for this date. Add your first task above."
+        )
     else:
         for index, task in enumerate(daily_tasks):
             if not isinstance(task, dict):
@@ -881,29 +942,27 @@ elif page == "Daily Planner":
                 daily_tasks[index] = task
 
             done = task_done(task)
-            subject_name = task.get("subject", "Study")
-            topic_name = task.get("topic", "Untitled task")
-            minutes = task.get("duration", 30)
 
             with st.container(border=True):
                 col1, col2 = st.columns([5, 1.5])
 
                 with col1:
+                    st.markdown(f"### {task.get('subject', 'Study')}")
+                    topic_text = task.get("topic", "Untitled task")
+
                     if done:
-                        st.markdown(f"### ~~{subject_name}~~")
-                        st.markdown(f"~~{topic_name}~~")
-                        st.caption(f"⏱️ {minutes} minutes · Completed 🎉")
+                        st.markdown(f"~~{topic_text}~~")
                     else:
-                        st.markdown(f"### {subject_name}")
-                        st.write(topic_name)
-                        st.caption(f"⏱️ Planned study time: {minutes} minutes")
+                        st.write(topic_text)
+
+                    st.caption(
+                        f"⏱️ {task.get('duration', 30)} minutes"
+                        + (" · Completed 🎉" if done else "")
+                    )
 
                 with col2:
-                    st.write("")
-                    button_text = "↩️ Undo" if done else "✅ Done"
-
                     if st.button(
-                        button_text,
+                        "↩️ Undo" if done else "✅ Done",
                         key=f"planner_done_{date_key}_{index}",
                         use_container_width=True,
                     ):
@@ -920,11 +979,129 @@ elif page == "Daily Planner":
                         save_data()
                         st.rerun()
 
-    st.write("")
-    st.markdown("### 🌷 Study reminder")
+    st.markdown("###  Study reminder")
     st.info(
         "Focus on one task at a time. Even 30 minutes of learning "
         "can make a difference!"
+    )
+
+
+# ---------------- STUDY TIMER ----------------
+elif page == "Study Timer":
+    st.markdown(
+        '<div class="section-title">⏱️ Study Timer</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Choose a study duration, focus on one task, and take a break '
+        'when you finish.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    timer_defaults = {
+        "timer_running": False,
+        "timer_remaining": 25 * 60,
+        "timer_deadline": None,
+        "timer_total": 25 * 60,
+        "timer_minutes": 25,
+    }
+
+    for key, value in timer_defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+    timer_minutes = st.select_slider(
+        "Choose study duration",
+        options=[5, 10, 15, 20, 25, 30, 45, 60, 90],
+        value=st.session_state.timer_minutes,
+        format_func=lambda value: f"{value} minutes",
+        disabled=st.session_state.timer_running,
+    )
+
+    if not st.session_state.timer_running:
+        st.session_state.timer_minutes = timer_minutes
+        st.session_state.timer_remaining = timer_minutes * 60
+        st.session_state.timer_total = timer_minutes * 60
+
+    @st.fragment(run_every="1s")
+    def show_timer():
+        if st.session_state.timer_running:
+            remaining = max(
+                0,
+                int(st.session_state.timer_deadline - time.time()),
+            )
+            st.session_state.timer_remaining = remaining
+
+            if remaining <= 0:
+                st.session_state.timer_running = False
+                st.session_state.timer_deadline = None
+                st.session_state.timer_remaining = 0
+
+        remaining = st.session_state.timer_remaining
+        minutes = remaining // 60
+        seconds = remaining % 60
+
+        st.markdown(
+            f'<div class="timer-display">{minutes:02d}:{seconds:02d}</div>',
+            unsafe_allow_html=True,
+        )
+
+        total_seconds = max(1, st.session_state.timer_total)
+        progress = 1 - (remaining / total_seconds)
+        st.progress(max(0.0, min(1.0, progress)))
+
+        if remaining == 0:
+            st.success("🎉 Study session complete! Great job!")
+        elif st.session_state.timer_running:
+            st.info("Stay focused. You are doing great!")
+        else:
+            st.caption("Press Start when you are ready to focus.")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            if st.button(
+                "▶️ Start" if not st.session_state.timer_running else "⏳ Running",
+                use_container_width=True,
+                disabled=st.session_state.timer_running or remaining == 0,
+            ):
+                st.session_state.timer_running = True
+                st.session_state.timer_deadline = time.time() + remaining
+                st.rerun()
+
+        with col2:
+            if st.button(
+                "⏸️ Pause",
+                use_container_width=True,
+                disabled=not st.session_state.timer_running,
+            ):
+                st.session_state.timer_remaining = max(
+                    0,
+                    int(st.session_state.timer_deadline - time.time()),
+                )
+                st.session_state.timer_running = False
+                st.session_state.timer_deadline = None
+                st.rerun()
+
+        with col3:
+            if st.button("🔄 Reset", use_container_width=True):
+                st.session_state.timer_running = False
+                st.session_state.timer_deadline = None
+                st.session_state.timer_remaining = (
+                    st.session_state.timer_minutes * 60
+                )
+                st.session_state.timer_total = (
+                    st.session_state.timer_minutes * 60
+                )
+                st.rerun()
+
+    show_timer()
+
+    st.info(
+        "Tip: Try 25 minutes of focused study followed by a short break. "
+        "Keep your phone away and focus on one topic."
     )
 
 
@@ -935,7 +1112,9 @@ elif page == "Achievements":
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="section-subtitle">Every little achievement deserves a celebration.</div>',
+        '<div class="section-subtitle">'
+        'Every little achievement deserves a celebration.'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -961,7 +1140,7 @@ elif page == "Achievements":
         {
             "icon": "📚",
             "title": "Skill Builder",
-            "description": "Reach 50% in any skill.",
+            "description": "Reach 50% in any subject or skill.",
             "unlocked": any(
                 int(value or 0) >= 50
                 for value in skills.values()
@@ -970,7 +1149,7 @@ elif page == "Achievements":
         {
             "icon": "💎",
             "title": "Skill Star",
-            "description": "Reach 100% in any skill.",
+            "description": "Reach 100% in any subject or skill.",
             "unlocked": any(
                 int(value or 0) >= 100
                 for value in skills.values()
@@ -985,7 +1164,8 @@ elif page == "Achievements":
     ]
 
     unlocked_count = sum(
-        item["unlocked"] for item in achievement_items
+        item["unlocked"]
+        for item in achievement_items
     )
 
     st.metric(
@@ -1001,11 +1181,11 @@ elif page == "Achievements":
             if item["unlocked"]:
                 icon = item["icon"]
                 status = "UNLOCKED ✨"
-                background = "linear-gradient(145deg, #fffdf6, #fff1cf)"
+                background = "linear-gradient(145deg, #3b3554, #51452f)"
             else:
                 icon = "🔒"
                 status = "LOCKED"
-                background = "linear-gradient(145deg, #f7f7fb, #eeedf5)"
+                background = "linear-gradient(145deg, #292545, #211e3d)"
 
             st.markdown(
                 f"""
@@ -1013,7 +1193,9 @@ elif page == "Achievements":
                      style="background:{background};">
                     <div class="achievement-icon">{icon}</div>
                     <div class="achievement-title">{item["title"]}</div>
-                    <div class="achievement-text">{item["description"]}</div>
+                    <div class="achievement-text">
+                        {item["description"]}
+                    </div>
                     <br>
                     <small><b>{status}</b></small>
                 </div>
@@ -1026,7 +1208,7 @@ elif page == "Achievements":
 st.markdown(
     """
     <div class="footer">
-        Made with 💜 for your learning journey · Keep growing, one step at a time.
+        Made for your learning journey · Keep growing, one step at a time.
     </div>
     """,
     unsafe_allow_html=True,
