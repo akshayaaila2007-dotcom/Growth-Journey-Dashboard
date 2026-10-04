@@ -789,10 +789,12 @@ if not st.session_state.logged_in:
                         )
 
                         st.session_state.user_data = (
-                            get_user_data(
-                                username
-                            )
+                  clean_user_data(
+                         get_user_data(
+                             username
                         )
+                 )
+            )
 
                         st.session_state.page_navigation = (
                             "Dashboard"
@@ -921,24 +923,31 @@ if not st.session_state.logged_in:
                     )
 
                 else:
-
                     create_user(
                         display_name,
                         username,
                         password,
                     )
 
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.session_state.display_name = display_name
+
+                    st.session_state.user_data = (
+                        clean_user_data(
+                            get_user_data(username)
+                        )
+                    )
+
+                    st.session_state.page_navigation = (
+                        "Dashboard"
+                    )
+
                     st.success(
-                        "Your little space is ready! 💜"
+                        f"Welcome, {display_name}! 💜"
                     )
 
-                    st.session_state.auth_page = (
-                        "Login"
-                    )
-
-                    st.info(
-                        "Now login with your new account."
-                    )
+                    st.rerun()
 
         st.write("")
 
