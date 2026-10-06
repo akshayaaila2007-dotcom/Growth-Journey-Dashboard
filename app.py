@@ -14,7 +14,7 @@ import streamlit as st
 # ============================================================
 
 st.set_page_config(
-    page_title="Growth Journey Dashboard",
+    page_title="Adaptive Learning Path AI",
     page_icon="💜",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -29,6 +29,7 @@ BASE_DIR = Path(__file__).parent
 
 LEGACY_DATA_FILE = BASE_DIR / "growth_data.json"
 USERS_FILE = BASE_DIR / "users.json"
+LOGIN_FILE = BASE_DIR / "login.json"
 
 
 # ============================================================
@@ -159,6 +160,55 @@ def load_legacy_data():
     except (json.JSONDecodeError, OSError):
 
         return empty_user_data()
+
+
+# ============================================================
+# SIMPLE PIN LOGIN
+# ============================================================
+
+def load_login():
+
+    if not LOGIN_FILE.exists():
+        return {}
+
+    try:
+        with open(
+            LOGIN_FILE,
+            "r",
+            encoding="utf-8",
+        ) as file:
+            saved_login = json.load(file)
+
+        if not isinstance(saved_login, dict):
+            return {}
+
+        pin = str(saved_login.get("pin", "")).strip()
+
+        if len(pin) != 4 or not pin.isdigit():
+            return {}
+
+        return {"pin": pin}
+
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def save_login(login_data):
+
+    with open(
+        LOGIN_FILE,
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(
+            login_data,
+            file,
+            indent=4,
+            ensure_ascii=False,
+        )
+
+
+login_data = load_login()
 
 
 # ============================================================
@@ -355,24 +405,14 @@ if not st.session_state.logged_in:
             --border: #403960;
         }
 
-        html,
-        body,
-        [class*="css"] {
+        html, body, [class*="css"] {
             font-family: 'DM Sans', sans-serif;
         }
 
         .stApp {
             background:
-                radial-gradient(
-                    circle at 10% 0%,
-                    #30275a 0%,
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 90% 10%,
-                    #44284f 0%,
-                    transparent 28%
-                ),
+                radial-gradient(circle at 10% 0%, #30275a 0%, transparent 30%),
+                radial-gradient(circle at 90% 10%, #44284f 0%, transparent 28%),
                 var(--bg);
         }
 
@@ -395,116 +435,29 @@ if not st.session_state.logged_in:
             position: absolute;
             left: 50%;
             top: 15px;
-
             font-size: 27px;
-
             opacity: 0;
-
-            transform:
-                translateX(-50%)
-                translateY(12px)
-                scale(0.65);
-
-            animation:
-                cuteSequence
-                12s
-                ease-in-out
-                infinite;
-
-            filter:
-                drop-shadow(
-                    0 5px 8px
-                    rgba(0, 0, 0, 0.22)
-                );
+            transform: translateX(-50%) translateY(12px) scale(0.65);
+            animation: cuteSequence 12s ease-in-out infinite;
+            filter: drop-shadow(0 5px 8px rgba(0,0,0,0.22));
         }
 
-        .cute1 {
-            animation-delay: 0s;
-        }
-
-        .cute2 {
-            animation-delay: 1.5s;
-        }
-
-        .cute3 {
-            animation-delay: 3s;
-        }
-
-        .cute4 {
-            animation-delay: 4.5s;
-        }
-
-        .cute5 {
-            animation-delay: 6s;
-        }
-
-        .cute6 {
-            animation-delay: 7.5s;
-        }
-
-        .cute7 {
-            animation-delay: 9s;
-        }
-
-        .cute8 {
-            animation-delay: 10.5s;
-        }
+        .cute1 { animation-delay: 0s; }
+        .cute2 { animation-delay: 1.5s; }
+        .cute3 { animation-delay: 3s; }
+        .cute4 { animation-delay: 4.5s; }
+        .cute5 { animation-delay: 6s; }
+        .cute6 { animation-delay: 7.5s; }
+        .cute7 { animation-delay: 9s; }
+        .cute8 { animation-delay: 10.5s; }
 
         @keyframes cuteSequence {
-
-            0% {
-                opacity: 0;
-
-                transform:
-                    translateX(-50%)
-                    translateY(12px)
-                    scale(0.65)
-                    rotate(-8deg);
-            }
-
-            4% {
-                opacity: 1;
-
-                transform:
-                    translateX(-50%)
-                    translateY(-2px)
-                    scale(1)
-                    rotate(4deg);
-            }
-
-            8% {
-                opacity: 1;
-
-                transform:
-                    translateX(-50%)
-                    translateY(-12px)
-                    scale(1.08)
-                    rotate(-4deg);
-            }
-
-            12% {
-                opacity: 1;
-
-                transform:
-                    translateX(-50%)
-                    translateY(-3px)
-                    scale(1)
-                    rotate(3deg);
-            }
-
-            16% {
-                opacity: 0;
-
-                transform:
-                    translateX(-50%)
-                    translateY(7px)
-                    scale(0.75)
-                    rotate(6deg);
-            }
-
-            100% {
-                opacity: 0;
-            }
+            0% { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.65) rotate(-8deg); }
+            4% { opacity: 1; transform: translateX(-50%) translateY(-2px) scale(1) rotate(4deg); }
+            8% { opacity: 1; transform: translateX(-50%) translateY(-12px) scale(1.08) rotate(-4deg); }
+            12% { opacity: 1; transform: translateX(-50%) translateY(-3px) scale(1) rotate(3deg); }
+            16% { opacity: 0; transform: translateX(-50%) translateY(7px) scale(0.75) rotate(6deg); }
+            100% { opacity: 0; }
         }
 
         .auth-wrapper {
@@ -520,36 +473,19 @@ if not st.session_state.logged_in:
         .auth-heart {
             font-size: 42px;
             margin-bottom: 4px;
-
-            animation:
-                heartBeat
-                2s
-                ease-in-out
-                infinite;
+            animation: heartBeat 2s ease-in-out infinite;
         }
 
         @keyframes heartBeat {
-
-            0%,
-            100% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.10);
-            }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.10); }
         }
 
         .auth-title {
             color: white;
-
-            font-family:
-                'Manrope',
-                sans-serif;
-
+            font-family: 'Manrope', sans-serif;
             font-size: 34px;
             font-weight: 800;
-
             margin-bottom: 7px;
         }
 
@@ -560,103 +496,47 @@ if not st.session_state.logged_in:
         }
 
         div[data-testid="stForm"] {
-            background:
-                rgba(
-                    33,
-                    30,
-                    61,
-                    0.94
-                );
-
-            border:
-                1px solid
-                #403960;
-
+            background: rgba(33, 30, 61, 0.94);
+            border: 1px solid #403960;
             border-radius: 24px;
-
             padding: 28px;
-
-            box-shadow:
-                0 18px 45px
-                rgba(0, 0, 0, 0.28);
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
         }
 
-        input,
-        textarea,
-        [data-baseweb="input"],
-        [data-baseweb="select"] > div {
-
-            background-color:
-                #292545 !important;
-
-            color:
-                #ffffff !important;
-
-            border-color:
-                #514a7c !important;
+        input, textarea, [data-baseweb="input"], [data-baseweb="select"] > div {
+            background-color: #292545 !important;
+            color: #ffffff !important;
+            border-color: #514a7c !important;
         }
 
-        div.stButton > button,
-        div[data-testid="stFormSubmitButton"] > button {
-
+        div.stButton > button, div[data-testid="stFormSubmitButton"] > button {
             border-radius: 13px;
-
             font-weight: 700;
-
             min-height: 44px;
-
             background: #7564d7;
-
             color: white;
-
-            border:
-                1px solid
-                #9385ed;
-
-            transition:
-                all
-                0.2s
-                ease;
+            border: 1px solid #9385ed;
+            transition: all 0.2s ease;
         }
 
-        div.stButton > button:hover,
-        div[data-testid="stFormSubmitButton"] > button:hover {
-
+        div.stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
             background: #8a79ed;
-
             color: white;
-
-            border-color:
-                #b3a8ff;
-
-            transform:
-                translateY(-2px);
+            border-color: #b3a8ff;
+            transform: translateY(-2px);
         }
 
-        h1,
-        h2,
-        h3,
-        h4,
-        p,
-        label {
+        h1, h2, h3, h4, p, label {
             color: #f5f2ff;
         }
 
         .auth-footer {
             text-align: center;
-
             color: #a99ac7;
-
-            font-family:
-                Georgia,
-                serif;
-
+            font-family: Georgia, serif;
             font-style: italic;
-
             font-size: 13px;
-
             opacity: 0.70;
-
             padding-top: 28px;
         }
 
@@ -672,7 +552,6 @@ if not st.session_state.logged_in:
     st.html(
         """
         <div class="cute-world">
-
             <div class="cute-item cute1">🐶</div>
             <div class="cute-item cute2">🧁</div>
             <div class="cute-item cute3">🍫</div>
@@ -681,7 +560,6 @@ if not st.session_state.logged_in:
             <div class="cute-item cute6">💜</div>
             <div class="cute-item cute7">🦋</div>
             <div class="cute-item cute8">🌷</div>
-
         </div>
         """
     )
@@ -693,49 +571,123 @@ if not st.session_state.logged_in:
     st.html(
         """
         <div class="auth-wrapper">
-
             <div class="auth-hero">
-
-                <div class="auth-heart">
-                    💜
-                </div>
-
-                <div class="auth-title">
-                    Growth Journey
-                </div>
-
+                <div class="auth-heart">💜</div>
+                <div class="auth-title">Adaptive Learning Path AI</div>
                 <div class="auth-subtitle">
                     A little space for your little progress.<br>
                     Learn · Plan · Grow · Repeat ✨
                 </div>
-
             </div>
-
         </div>
         """
     )
 
     # ========================================================
-    # LOGIN
+    # FIRST TIME / RETURNING LOGIN
     # ========================================================
 
-    if st.session_state.auth_page == "Login":
+    if not login_data:
 
-        st.markdown(
-            "### 🔐 Welcome back"
+        st.markdown("### 🌸 Create your login PIN")
+
+        st.info(
+            "First time here? Enter your name and create a 4-digit PIN. "
+            "You will use the same PIN next time."
+        )
+
+        with st.form("first_login_form"):
+
+            display_name = st.text_input(
+                "Your name",
+                placeholder="Example: Akshaya",
+            )
+
+            new_pin = st.text_input(
+                "Create a 4-digit PIN",
+                type="password",
+                max_chars=4,
+                placeholder="Example: 1234",
+            )
+
+            confirm_pin = st.text_input(
+                "Confirm your PIN",
+                type="password",
+                max_chars=4,
+                placeholder="Enter the same PIN",
+            )
+
+            submitted = st.form_submit_button(
+                "💜 Create PIN & Continue",
+                use_container_width=True,
+            )
+
+            if submitted:
+
+                display_name = display_name.strip()
+                new_pin = new_pin.strip()
+                confirm_pin = confirm_pin.strip()
+
+                if not display_name:
+                    st.warning("Please enter your name.")
+
+                elif len(new_pin) != 4 or not new_pin.isdigit():
+                    st.warning("PIN must contain exactly 4 digits.")
+
+                elif new_pin != confirm_pin:
+                    st.error("PINs do not match.")
+
+                else:
+                    username = normalize_username(display_name)
+                    existing = users_database["users"].get(username)
+
+                    if existing and isinstance(existing.get("data"), dict):
+                        user_data = clean_user_data(existing["data"])
+                    else:
+                        user_data = load_legacy_data()
+
+                    users_database["users"][username] = {
+                        "display_name": display_name,
+                        "password": hash_password(new_pin),
+                        "data": user_data,
+                    }
+
+                    save_users()
+
+                    login_data = {
+                        "pin": new_pin,
+                    }
+                    save_login(login_data)
+
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.session_state.display_name = display_name
+                    st.session_state.user_data = clean_user_data(user_data)
+                    st.session_state.page_navigation = "Dashboard"
+
+                    st.rerun()
+
+    else:
+
+        st.markdown("### 🔐 Welcome back")
+
+        st.info(
+            "Enter any name you want to use for this session. "
+            "Your name is not remembered. Your 4-digit PIN is remembered."
         )
 
         with st.form("login_form"):
 
-            username = st.text_input(
-                "Username",
-                placeholder="Enter your username",
+            display_name = st.text_input(
+                "Your name",
+                placeholder="Enter your name",
             )
 
-            password = st.text_input(
-                "Password",
+            pin = st.text_input(
+                "4-digit PIN",
                 type="password",
-                placeholder="Enter your password",
+                max_chars=4,
+                placeholder="Enter your saved PIN",
             )
 
             submitted = st.form_submit_button(
@@ -745,232 +697,42 @@ if not st.session_state.logged_in:
 
             if submitted:
 
-                username = normalize_username(
-                    username
-                )
-
-                if not username or not password:
-
-                    st.warning(
-                        "Please enter both username and password."
-                    )
-
-                elif username not in users_database["users"]:
-
-                    st.error(
-                        "No account found with this username."
-                    )
-
-                else:
-
-                    user = users_database[
-                        "users"
-                    ][username]
-
-                    if verify_password(
-                        password,
-                        user.get(
-                            "password",
-                            {},
-                        ),
-                    ):
-
-                        st.session_state.logged_in = True
-
-                        st.session_state.username = (
-                            username
-                        )
-
-                        st.session_state.display_name = (
-                            user.get(
-                                "display_name",
-                                username,
-                            )
-                        )
-
-                        st.session_state.user_data = (
-                  clean_user_data(
-                         get_user_data(
-                             username
-                        )
-                 )
-            )
-
-                        st.session_state.page_navigation = (
-                            "Dashboard"
-                        )
-
-                        st.rerun()
-
-                    else:
-
-                        st.error(
-                            "Incorrect password. Please try again."
-                        )
-
-        st.write("")
-
-        col1, col2, col3 = st.columns(
-            [1, 2, 1]
-        )
-
-        with col2:
-
-            if st.button(
-                "✨ Create a new account",
-                use_container_width=True,
-            ):
-
-                st.session_state.auth_page = (
-                    "Register"
-                )
-
-                st.rerun()
-
-    # ========================================================
-    # REGISTER
-    # ========================================================
-
-    else:
-
-        st.markdown(
-            "### 🌸 Create your little space"
-        )
-
-        with st.form("register_form"):
-
-            display_name = st.text_input(
-                "Your name",
-                placeholder="Example: Akshaya Aila",
-            )
-
-            username = st.text_input(
-                "Create a username",
-                placeholder="Example: akshaya",
-            )
-
-            password = st.text_input(
-                "Create a password",
-                type="password",
-                placeholder="At least 6 characters",
-            )
-
-            confirm_password = st.text_input(
-                "Confirm password",
-                type="password",
-                placeholder="Enter the password again",
-            )
-
-            submitted = st.form_submit_button(
-                "🌸 Create my account",
-                use_container_width=True,
-            )
-
-            if submitted:
-
                 display_name = display_name.strip()
-
-                username = normalize_username(
-                    username
-                )
+                pin = pin.strip()
 
                 if not display_name:
+                    st.warning("Please enter your name.")
 
-                    st.warning(
-                        "Please enter your name."
-                    )
+                elif len(pin) != 4 or not pin.isdigit():
+                    st.warning("Please enter your 4-digit PIN.")
 
-                elif not username:
-
-                    st.warning(
-                        "Please create a username."
-                    )
-
-                elif len(username) < 3:
-
-                    st.warning(
-                        "Username must contain at least 3 characters."
-                    )
-
-                elif " " in username:
-
-                    st.warning(
-                        "Username cannot contain spaces."
-                    )
-
-                elif not password:
-
-                    st.warning(
-                        "Please create a password."
-                    )
-
-                elif len(password) < 6:
-
-                    st.warning(
-                        "Password must contain at least 6 characters."
-                    )
-
-                elif password != confirm_password:
-
-                    st.error(
-                        "Passwords do not match."
-                    )
-
-                elif username_exists(username):
-
-                    st.error(
-                        "That username is already registered."
-                    )
+                elif pin != str(login_data.get("pin", "")):
+                    st.error("Incorrect PIN. Please try again.")
 
                 else:
-                    create_user(
-                        display_name,
-                        username,
-                        password,
-                    )
+                    username = normalize_username(display_name)
+                    user = users_database["users"].get(username)
+
+                    if user:
+                        user_data = clean_user_data(
+                            user.get("data", empty_user_data())
+                        )
+                    else:
+                        user_data = empty_user_data()
+                        users_database["users"][username] = {
+                            "display_name": display_name,
+                            "password": hash_password(pin),
+                            "data": user_data,
+                        }
+                        save_users()
 
                     st.session_state.logged_in = True
                     st.session_state.username = username
                     st.session_state.display_name = display_name
-
-                    st.session_state.user_data = (
-                        clean_user_data(
-                            get_user_data(username)
-                        )
-                    )
-
-                    st.session_state.page_navigation = (
-                        "Dashboard"
-                    )
-
-                    st.success(
-                        f"Welcome, {display_name}! 💜"
-                    )
+                    st.session_state.user_data = user_data
+                    st.session_state.page_navigation = "Dashboard"
 
                     st.rerun()
-
-        st.write("")
-
-        col1, col2, col3 = st.columns(
-            [1, 2, 1]
-        )
-
-        with col2:
-
-            if st.button(
-                "← Back to Login",
-                use_container_width=True,
-            ):
-
-                st.session_state.auth_page = (
-                    "Login"
-                )
-
-                st.rerun()
-
-    # --------------------------------------------------------
-    # FOOTER
-    # --------------------------------------------------------
 
     st.html(
         """
@@ -1888,7 +1650,7 @@ st.markdown(
 with st.sidebar:
 
     st.markdown(
-        "## Growth Journey"
+        "## Adaptive Learning Path AI"
     )
 
     st.caption(
