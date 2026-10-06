@@ -3,8 +3,7 @@
 An AI-based personalized learning system built with Python and Streamlit to help students organize, track, and improve their learning journey.
 
 ## Live Demo
-
-[Open Adaptive Learning Path AI](https://growth-journey-dashboard-2rbmkewqdtvjwarujqbq2z.streamlit.app/)
+[Open Adaptive Learning Path AI](https://adaptive-learning-ai.streamlit.app/)
 
 ## Features
 
