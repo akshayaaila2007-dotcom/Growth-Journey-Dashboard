@@ -1,26 +1,44 @@
-# Growth Journey Dashboard
+# Adaptive Learning Path AI
 
-A personal learning tracker built with Python and Streamlit.
+An AI-based personalized learning system built with Python and Streamlit to help students organize, track, and improve their learning journey.
 
 ## Live Demo
-[Open Growth Journey Dashboard](https://growth-journey-dashboard-2rbmkewqdtvjwarujqbq2z.streamlit.app/)
+
+[Open Adaptive Learning Path AI](https://growth-journey-dashboard-2rbmkewqdtvjwarujqbq2z.streamlit.app/)
 
 ## Features
-- Track my skills
-- View progress bars
-- Add and manage learning goals
-- Mark goals as completed
-- Celebrate achievements
+
+- Personalized learning space
+- Track skills and progress
+- Create and manage learning goals
+- Daily study planning
+- Study timer
+- Achievement tracking
+- Simple 4-digit PIN login
 
 ## Built With
+
 - Python
 - Streamlit
+- JSON
+- HTML & CSS
 
 ## How to Run
-Install the required package:
 
-    pip install -r requirements.txt
+Install the required packages:
 
-Run the dashboard:
+```bash
+pip install -r requirements.txt
+```
 
-    python -m streamlit run app.py
+Run the application:
+
+```bash
+python -m streamlit run app.py
+```
+
+## Project Purpose
+
+Adaptive Learning Path AI provides students with a simple and organized environment to set learning goals, monitor skill development, plan study activities, and maintain consistent progress.
+
+### Keep learning. Keep progressing. 💜
